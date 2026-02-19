@@ -1,48 +1,52 @@
-// --- CONFIGURATION ---
-const MY_NUMBER = "919963827311"; 
+// --- 1. CONFIGURATION ---
+const MY_NUMBER = "919963827311"; // Your WhatsApp Number (Country Code + 10 Digits)
 const USERS = {
     "admin1": { pass: "chips123", role: "ADMIN" },
     "boss01": { pass: "super99", role: "SUPER_ADMIN" }
 };
 
-// Initial Products
+// Initial Products List
 let products = JSON.parse(localStorage.getItem('sn_products')) || [
-    { id: 1, name: 'Lays Chips', price: 20, img: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=300' },
-    { id: 2, name: 'Oreo Biscuits', price: 30, img: 'https://images.unsplash.com/photo-1550617931-e17a7b70dce2?w=300' }
+    { id: 1, name: 'Lays Chips', price: 20, stock: 10, img: 'https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=300' },
+    { id: 2, name: 'Oreo Biscuits', price: 30, stock: 5, img: 'https://images.unsplash.com/photo-1550617931-e17a7b70dce2?w=300' }
 ];
 
 let cart = [];
 let currentUser = null;
 
-// --- INITIALIZE ---
+// --- 2. INITIALIZE ---
 function init() {
     renderProducts();
     updateUI();
+    updateAdminUI();
 }
 
-// --- SHOP LOGIC ---
+// --- 3. SHOP UI ---
 function renderProducts() {
     const grid = document.getElementById('product-grid');
     grid.innerHTML = products.map(p => `
         <div class="card">
             <span class="product-id">ID: ${p.id}</span>
-            <img src="${p.img}" alt="${p.name}">
+            <img src="${p.img}" alt="${p.name}" onerror="this.src='https://placehold.co/150x150?text=No+Image'">
             <h3>${p.name}</h3>
-            <p>₹${p.price}</p>
+            <p>₹${p.price} | Stock: ${p.stock}</p>
             <div class="qty-controls">
                 <button class="qty-btn" onclick="changeQtyUI(${p.id}, -1)">-</button>
                 <input type="number" id="qty-input-${p.id}" class="qty-input" value="1" readonly>
                 <button class="qty-btn" onclick="changeQtyUI(${p.id}, 1)">+</button>
             </div>
-            <button class="btn-primary" onclick="addToCart(${p.id})">Add to Cart</button>
+            <button class="btn-primary" ${p.stock <= 0 ? 'disabled' : ''} onclick="addToCart(${p.id})">
+                ${p.stock <= 0 ? 'Out of Stock' : 'Add to Cart'}
+            </button>
         </div>
     `).join('');
 }
 
 function changeQtyUI(id, delta) {
     const input = document.getElementById(`qty-input-${id}`);
+    const product = products.find(p => p.id === id);
     let val = parseInt(input.value) + delta;
-    if (val >= 1 && val <= 20) input.value = val;
+    if (val >= 1 && val <= product.stock) input.value = val;
 }
 
 function addToCart(id) {
@@ -50,11 +54,13 @@ function addToCart(id) {
     const qty = parseInt(document.getElementById(`qty-input-${id}`).value);
     const existing = cart.find(item => item.id === id);
 
-    if (existing) existing.qty += qty;
-    else cart.push({ ...product, qty });
-    
+    if (existing) {
+        if (existing.qty + qty <= product.stock) existing.qty += qty;
+        else alert("Not enough stock!");
+    } else {
+        cart.push({ ...product, qty });
+    }
     updateUI();
-    document.getElementById(`qty-input-${id}`).value = 1;
 }
 
 function updateUI() {
@@ -62,7 +68,7 @@ function updateUI() {
     document.getElementById('cart-total-price').innerText = '₹' + cart.reduce((s, i) => s + (i.price * i.qty), 0);
 }
 
-// --- WHATSAPP ENGINE ---
+// --- 4. WHATSAPP ENGINE ---
 function placeOrder() {
     const mobile = document.getElementById('user-mobile').value;
     const room = document.getElementById('user-room').value;
@@ -81,7 +87,7 @@ function placeOrder() {
     cart = []; updateUI(); toggleCart();
 }
 
-// --- ADMIN LOGIN & ACTIONS ---
+// --- 5. ADMIN CORE LOGIC ---
 function openLogin() { document.getElementById('login-modal').style.display = 'block'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function toggleCart() { 
@@ -95,7 +101,7 @@ function renderCartItems() {
     list.innerHTML = cart.length === 0 ? "<p>Empty</p>" : cart.map((item, i) => `
         <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
             <span>${item.name} (x${item.qty})</span>
-            <span>₹${item.price * item.qty} <button onclick="removeItem(${i})" style="color:red;border:none;background:none;">✕</button></span>
+            <span>₹${item.price * item.qty} <button onclick="removeItem(${i})" style="color:red;border:none;background:none;cursor:pointer;">✕</button></span>
         </div>
     `).join('');
 }
@@ -109,7 +115,7 @@ function processLogin() {
         currentUser = USERS[user];
         closeModal('login-modal');
         updateAdminUI();
-    } else alert("Error");
+    } else alert("Invalid Login Credentials");
 }
 
 function logout() { currentUser = null; updateAdminUI(); }
@@ -121,28 +127,54 @@ function updateAdminUI() {
     panel.style.display = 'block';
     document.getElementById('role-indicator').innerText = `Role: ${currentUser.role}`;
 
-    let html = `<button onclick="adminAddItem()" class="btn-primary">Add Item</button>`;
+    let html = `<button onclick="adminUpdateStock()" class="btn-primary">Update Stock</button>`;
     if (currentUser.role === 'SUPER_ADMIN') {
-        html += `<button onclick="adminDeleteItem()" class="btn-primary" style="background:red">Delete Item</button>`;
+        html += `<button onclick="adminUpdateCost()" class="btn-primary" style="background:#2e7d32">Change Price</button>`;
+        html += `<button onclick="adminAddItem()" class="btn-primary" style="background:#6a1b9a">Add New Item</button>`;
+        html += `<button onclick="adminDeleteItem()" class="btn-primary" style="background:#c62828">Delete Item</button>`;
     }
     controls.innerHTML = html;
 }
 
+// --- ADMIN MANAGEMENT ACTIONS ---
 function adminAddItem() {
-    const name = prompt("Name:");
-    const price = prompt("Price:");
-    const img = prompt("Photo URL:");
+    const name = prompt("Enter Snack Name:");
+    const price = prompt("Enter Price (₹):");
+    const stock = prompt("Enter Initial Stock Quantity:");
+    const img = prompt("Paste Photo Link (Image URL):");
+    
     if (name && price && img) {
-        products.push({ id: products.length + 1, name, price: parseInt(price), img });
-        localStorage.setItem('sn_products', JSON.stringify(products));
-        renderProducts();
+        products.push({ id: products.length + 1, name, price: parseInt(price), stock: parseInt(stock), img });
+        saveAndRefresh();
     }
 }
 
 function adminDeleteItem() {
-    const id = prompt("ID to delete:");
+    const id = prompt("Enter Product ID to delete:");
     products = products.filter(p => p.id != id);
-    products.forEach((p, i) => p.id = i + 1);
+    products.forEach((p, i) => p.id = i + 1); // Maintain 1,2,3 order
+    saveAndRefresh();
+}
+
+function adminUpdateStock() {
+    const id = prompt("Enter Product ID:");
+    const p = products.find(prod => prod.id == id);
+    if (p) {
+        const val = prompt(`Enter new stock for ${p.name}:`, p.stock);
+        if (val !== null) { p.stock = parseInt(val); saveAndRefresh(); }
+    }
+}
+
+function adminUpdateCost() {
+    const id = prompt("Enter Product ID:");
+    const p = products.find(prod => prod.id == id);
+    if (p) {
+        const val = prompt(`Enter new price for ${p.name}:`, p.price);
+        if (val !== null) { p.price = parseInt(val); saveAndRefresh(); }
+    }
+}
+
+function saveAndRefresh() {
     localStorage.setItem('sn_products', JSON.stringify(products));
     renderProducts();
 }

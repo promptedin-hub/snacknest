@@ -13,6 +13,15 @@
         <p class="tagline">“Cravings delivered to your room.”</p>
     </header>
 
+    <section id="admin-panel" class="admin-dashboard" style="display:none;">
+        <div class="admin-header">
+            <span id="role-indicator">Role: Staff</span>
+            <button onclick="logout()" class="btn-logout">Logout</button>
+        </div>
+        <div id="admin-controls" class="admin-grid">
+            </div>
+    </section>
+
     <main id="product-grid" class="grid-container">
         </main>
 
@@ -24,29 +33,36 @@
         <span id="cart-total-price">₹0</span>
     </div>
 
+    <div id="login-modal" class="modal">
+        <div class="modal-content">
+            <h2>Staff Login</h2>
+            <div class="input-group">
+                <input type="text" id="login-user" placeholder="Username">
+                <input type="password" id="login-pass" placeholder="Password">
+            </div>
+            <button class="btn-primary" onclick="processLogin()">Login</button>
+            <button class="btn-secondary" onclick="closeModal('login-modal')">Cancel</button>
+        </div>
+    </div>
+
     <div id="cart-modal" class="modal">
         <div class="modal-content">
             <h2>Your Selection</h2>
-            
             <div id="cart-items-list" class="scroll-area"></div>
-            
             <hr>
-
             <div class="input-group">
-                <label for="user-mobile">Mobile Number</label>
                 <input type="tel" id="user-mobile" placeholder="10-Digit Mobile Number" maxlength="10">
-                
-                <label for="user-room">Room Number</label>
-                <input type="text" id="user-room" placeholder="e.g., B-102">
-                
-                <label for="user-note">Delivery Note</label>
-                <textarea id="user-note" placeholder="Optional: Leave at door, etc."></textarea>
+                <input type="text" id="user-room" placeholder="Room Number (e.g., B-102)">
+                <textarea id="user-note" placeholder="Optional: Special instructions..."></textarea>
             </div>
-
             <button class="btn-primary" onclick="placeOrder()">Confirm on WhatsApp</button>
             <button class="btn-secondary" onclick="toggleCart()">Close</button>
         </div>
     </div>
+
+    <footer onclick="openLogin()">
+        <p>© 2026 SnackNest • Staff Portal Access</p>
+    </footer>
 
     <script src="script.js"></script>
 </body>

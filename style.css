@@ -224,17 +224,17 @@ footer {
 
 .qty-controls {
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
 }
 
 .qty-btn {
-    background: #eee;
-    border: none;
     width: 30px;
     height: 30px;
+    border: 1px solid #ddd;
+    background: #fff;
     border-radius: 5px;
     font-weight: bold;
     cursor: pointer;
@@ -245,5 +245,5 @@ footer {
     text-align: center;
     border: 1px solid #ddd;
     border-radius: 5px;
-    font-weight: bold;
+    padding: 4px;
 }
